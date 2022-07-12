@@ -14,7 +14,7 @@ import schedule
 import colorama
 
 sys.path.append(os.path.dirname(os.path.abspath(os.path.dirname(__file__))))
-from database import message as dbgout
+from msglog import message as dbgout
 from ex_upbit import api_exchange as upbit_api
 from trade import select_coin as coin
 from trade import order_buy as buy

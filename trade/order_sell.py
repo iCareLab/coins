@@ -4,7 +4,7 @@ sys.path.append(os.path.dirname(os.path.abspath(os.path.dirname(__file__))))
 import time
 import datetime as dt
 import pandas as pd
-from database import message as dbgout
+from msglog import message as dbgout
 from ex_upbit import api_exchange as upbit_api
 
 def order(upbit, todo):
