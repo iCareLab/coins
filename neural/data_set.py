@@ -8,7 +8,7 @@ from torch.autograd import Variable
 sys.path.append(os.path.dirname(os.path.abspath(os.path.dirname(__file__))))
 from ex_upbit import api_exchange as upbit
 
-def get_tensor_data(ticker=None, db_path=None, verbose=False):
+def load_pure_data(ticker, db_path, verbose=False):
     """
     Getting Pure Data
     """
@@ -25,6 +25,11 @@ def get_tensor_data(ticker=None, db_path=None, verbose=False):
     if verbose is True: print('----- X:\n', X)
     if verbose is True: print('----- y:\n', y)
 
+    return (X, y)
+
+def tensor_data(ticker=None, db_path=None, verbose=False):
+    (X, y) = load_pure_data(ticker, db_path, verbose = False)
+
     """
     Normalize of getted data
     """
@@ -38,7 +43,7 @@ def get_tensor_data(ticker=None, db_path=None, verbose=False):
     """
     Split Data to training & test data
     """
-    SPLIT = int(len(df.index) * 0.8)
+    SPLIT = int(len(X.index) * 0.8)
     X_train_matrix = X_ss[:SPLIT, :]; y_train_matrix = y_mm[:SPLIT, :]
     X_test_matrix  = X_ss[SPLIT:, :]; y_test_matrix  = y_mm[SPLIT:, :]
     if verbose is True: print('----- Training Matrix(2dim): X - ', X_train_matrix.shape, ', y -', y_train_matrix.shape)
@@ -72,12 +77,9 @@ def get_tensor_data(ticker=None, db_path=None, verbose=False):
     if verbose is True: print('----- Testing Reshape-X Tensor(3dim): X -', X_test_tensor.shape, ', y -', y_test_tensor.shape)
     if verbose is True: print('----- Test Reshape-X Tensors sets: \n', X_test_tensor[:5], '\n', y_test_tensor[:5])
 
-    time_series = df.index
-    #print(time_series)
-    
-    return (time_series, X_train_tensor, y_train_tensor, X_test_tensor, y_test_tensor)
+    return (X_train_tensor, y_train_tensor, X_test_tensor, y_test_tensor)
 
 if __name__ == '__main__':
     db_path = "../data/upbit/2022-07-12 17:00:00/"
     ticker = 'KRW-WAXP'
-    time, X_train, y_train, X_test, y_test = get_tensor_data(ticker, db_path, verbose=True)
+    X_train, y_train, X_test, y_test = tensor_data(ticker, db_path, verbose=True)

@@ -130,3 +130,6 @@ dmypy.json
 
 # personal setting
 data/
+models/
+*.tar
+*.pdf

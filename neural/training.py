@@ -1,4 +1,5 @@
 import os, sys
+import datetime as dt
 import torch
 
 import lstm as network
@@ -51,7 +52,10 @@ def training(lstm, X_tensors, y_tensors, device):
 
 if __name__ == '__main__':
     """ 데이터셋 준비하기 """
-    time, X_train, y_train, X_test, y_test = get.get_tensor_data('KRW-WAXP', '/root/work/coins/data/upbit/2022-07-12 17:00:00/', verbose=True)
+    ticker  = 'KRW-WAXP'
+    db_path = '/root/work/coins/data/upbit/2022-07-12 17:00:00/'
+
+    X_train, y_train, X_test, y_test = get.tensor_data(ticker, db_path, False)
 
     """ 네트웨크 파라미터 구성하기 """
     device = network.get_machine()
@@ -59,3 +63,19 @@ if __name__ == '__main__':
 
     """ 학습하기 """
     training(lstm, X_train, y_train, device)
+
+    # 모델의 state_dict 출력
+    print("Model's state_dict:")
+    for param_tensor in lstm.state_dict():
+        print(param_tensor, "\t", lstm.state_dict()[param_tensor].size())
+
+    # 옵티마이저의 state_dict 출력
+    #print("Optimizer's state_dict:")
+    #for var_name in optimizer.state_dict():
+    #    print(var_name, "\t", optimizer.state_dict()[var_name])
+
+    ## 전체 모델 저장하기
+    PATH = './models/'
+    MFILE = PATH + str(dt.date.today()) + "-model_scripted.pt"
+    model_scripted = torch.jit.script(lstm) # Export to TorchScript
+    model_scripted.save(MFILE) # Save
