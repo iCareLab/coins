@@ -18,11 +18,16 @@ def estimate(model, device, ticker, db_path):
     """ 데이터 가져오기 """
     X_train, y_train, X_test, y_test = get.tensor_data(ticker, db_path, False)
     X_data = torch.cat([X_test,X_train], dim = 0)
+    y_data = torch.cat([y_test,y_train], dim = 0)
 
     print(X_train.shape, X_test.shape, X_data.shape)
 
     """ 예측하기 """
-    predict = model(X_data.to(device))#forward pass
+    #predict = model(X_data.to(device))#forward pass
+    #data_predict = predict.data.detach().cpu().numpy() #numpy conversion
+    #dataY_plot = y_data.data.numpy()
+
+    predict = model(X_test.to(device))#forward pass
     data_predict = predict.data.detach().cpu().numpy() #numpy conversion
     dataY_plot = y_test.data.numpy()
 

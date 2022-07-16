@@ -20,15 +20,37 @@ def load_pure_data(ticker, db_path, verbose=False):
     #print(df)
 
     # df : 'open', 'high', 'low', 'close', 'volume', 'value'
-    X = df.drop(columns='volume')   # 'open', 'high', 'low', 'close', 'value'
+    #X = df.drop(columns='volume')   # 'open', 'high', 'low', 'close', 'value'
+    X = df.drop(columns='value')   # 'open', 'high', 'low', 'close', 'volume'
     y = df[['close']]               # 'close'
     if verbose is True: print('----- X:\n', X)
     if verbose is True: print('----- y:\n', y)
 
-    return (X, y)
+    return (df, X, y)
+
+def gen_data_set(df=None, time_steps=None, for_periods=None):
+    """
+    input:
+        df     : 날짜를 인덱스로 가지는 코인가격 원시데이터. (pandas form)
+        steps  : input 데이터의 time steps
+        periods: output 데이터의 time steps
+    output:
+        X_train: 학습 데이타
+        y_train: 학습 결과 정답 데이타
+        X_test : 테스트에 사용될 데이타
+    """
+    SPLIT = int(len(df.index) * 0.8)
+    # training & test data set
+    ts_train = df[:SPLIT].iloc[:, 0:1].values
+    ts_test  = df[SPLIT:].iloc[:, 0:1].values
+    ts_train_len = len(ts_train)
+    ts_test_len  = len(ts_test)
+
+    # Training 테이터의 damples와 time steps로 원본데이터 스라이싱하기...
+
 
 def tensor_data(ticker=None, db_path=None, verbose=False):
-    (X, y) = load_pure_data(ticker, db_path, verbose = False)
+    (_df, X, y) = load_pure_data(ticker, db_path, verbose = True)
 
     """
     Normalize of getted data
@@ -79,7 +101,76 @@ def tensor_data(ticker=None, db_path=None, verbose=False):
 
     return (X_train_tensor, y_train_tensor, X_test_tensor, y_test_tensor)
 
+## 변수의 상관 관계 분석
+import matplotlib.pyplot as plt
+import statsmodels.api as sm    #Modeling algorithms -- General
+from scipy import stats
+
+def correlation_analysis(verbose=False, Plot=False):
+    (_df, X, y) = load_pure_data(ticker, db_path, verbose = False)
+
+    df = _df.copy()
+    df = df.asfreq('H', method = 'ffill') #결측치가 있으면 앞의 데이터를 이용해서 채워 넣는다.
+    result = sm.tsa.seasonal_decompose(df['close'], model='additive')
+    Y_trend = pd.DataFrame(result.trend)
+    Y_trend.fillna(method='ffill', inplace=True)
+    Y_trend.fillna(method='bfill', inplace=True)
+    Y_trend.columns = ['trend']
+
+    Y_seasonal = pd.DataFrame(result.seasonal)
+    Y_seasonal.fillna(method='ffill', inplace=True)
+    Y_seasonal.fillna(method='bfill', inplace=True)
+    Y_seasonal.columns = ['seasonal']
+
+    Y_day = df[['close']].rolling(24).mean()
+    Y_day.fillna(method='ffill', inplace=True)
+    Y_day.fillna(method='bfill', inplace=True)
+    Y_day.columns = ['day']
+
+    Y_week = df[['close']].rolling(24*7).mean()
+    Y_week.fillna(method='ffill', inplace=True)
+    Y_week.fillna(method='bfill', inplace=True)
+    Y_week.columns = ['week']
+
+    df = pd.concat([df, Y_trend, Y_seasonal, Y_day, Y_week], axis=1)
+
+    #df['Year'] = df.index.year
+    #df['Quarter'] = df.index.quarter
+    #df['Quarter_ver2'] = df['Quarter'] + (df.Year - df.Year.min()) * 4
+    #df['Month'] = df.index.month
+    #df['Day'] = df.index.day
+    df['Hour'] = df.index.hour
+    #df['WorkDay'] = df.index.dayofweek
+    #df = df.asfreq('H', method = 'bfill') #결측치가 있으면 앞의 데이터를 이용해서 채워 넣는다.
+    if verbose is True: print(df.info())
+    if verbose is True: print(df.describe(include='all').T)
+
+    fit_df = sm.OLS(df['close'], df).fit()
+    if verbose is True: print(fit_df.summary())
+
+    if Plot is True:
+        print(df.corr())
+        #df.hist(bins=20, grid=True, figsize=(16, 12))
+        df.boxplot(column='volume', by='Hour', grid=True, figsize=(12,5))
+        df.boxplot(column='close', by='Hour', grid=True, figsize=(12,5))
+        plt.show()
+
+        df.trend.plot()
+        plt.show()
+
+        df.seasonal.plot()
+        plt.show()
+
+    plt.plot(df.close)
+    plt.show()
+
 if __name__ == '__main__':
     db_path = "../data/upbit/2022-07-12 17:00:00/"
-    ticker = 'KRW-WAXP'
-    X_train, y_train, X_test, y_test = tensor_data(ticker, db_path, verbose=True)
+    #ticker = 'KRW-WAXP'
+    ticker = 'KRW-ELF'
+
+    #X_train, y_train, X_test, y_test = tensor_data(ticker, db_path, verbose=False)
+    #correlation_analysis(verbose=True, Plot=False)
+
+    (df, X, y) = load_pure_data(ticker, db_path, verbose=True)
+    gen_data_set(df=df, time_steps=5, for_periods=2)
