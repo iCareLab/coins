@@ -14,12 +14,12 @@ def get_machine():
 class LSTM(nn.Module):
     def __init__(self, num_classes, input_size, hidden_size, num_layers, seq_length, device):
         super(LSTM, self).__init__()
-        self.num_classes = num_classes #number of classes
-        self.num_layers = num_layers #number of layers
-        self.input_size = input_size #input size
-        self.hidden_size = hidden_size #hidden state
-        self.seq_length = seq_length #sequence length
-        self.device = device #calculate on device
+        self.num_classes = num_classes  #number of output classes
+        self.num_layers = num_layers    #number of stacked lstm layer
+        self.input_size = input_size    #input size: number of features
+        self.hidden_size = hidden_size  #hidden state: number of features in hidden state 
+        self.seq_length = seq_length    #sequence length
+        self.device = device            #calculate on device
  
         self.lstm = nn.LSTM(input_size=input_size, hidden_size=hidden_size,
                       num_layers=num_layers, batch_first=True) #lstm

@@ -1,5 +1,6 @@
 import os, sys
 import pandas as pd
+import numpy as np
 from sklearn.preprocessing import StandardScaler, MinMaxScaler
 
 import torch
@@ -28,7 +29,7 @@ def load_pure_data(ticker, db_path, verbose=False):
 
     return (df, X, y)
 
-def gen_data_set(df=None, time_steps=None, for_periods=None):
+def gen_data_set(df=None, window_size=None, how_many=None):
     """
     input:
         df     : 날짜를 인덱스로 가지는 코인가격 원시데이터. (pandas form)
@@ -41,12 +42,35 @@ def gen_data_set(df=None, time_steps=None, for_periods=None):
     """
     SPLIT = int(len(df.index) * 0.8)
     # training & test data set
-    ts_train = df[:SPLIT].iloc[:, 0:1].values
-    ts_test  = df[SPLIT:].iloc[:, 0:1].values
+    ts_train = df[:SPLIT].iloc[:, :].values
+    ts_test  = df[SPLIT:].iloc[:, :].values
     ts_train_len = len(ts_train)
     ts_test_len  = len(ts_test)
 
-    # Training 테이터의 damples와 time steps로 원본데이터 스라이싱하기...
+    # Training 테이터의 samples와 time steps로 원본데이터 스라이싱하기...
+    X_train = []
+    y_train = []
+    #X_train = np.vsplit(X_train, 6)
+    for i in range(window_size, ts_train_len -1):
+        X_train.append(ts_train[i-window_size:i, :4])
+        y_train.append(ts_train[i:i+1, 3])
+
+    X_train = np.array(X_train)
+    y_train = np.array(y_train)
+    print(X_train.shape, y_train.shape)
+
+    # Test 테이터의 samples와 time steps로 원본데이터 스라이싱하기...
+    X_test = []
+    y_test = []
+    for i in range(window_size, ts_test_len -1):
+        X_test.append(ts_test[i-window_size:i, :4])
+        y_test.append(ts_test[i:i+1, 3])
+
+    X_test = np.array(X_test)
+    y_test = np.array(y_test)
+    print(X_test.shape, y_test.shape)
+        
+    return [X_train, y_train],[X_test, y_test]
 
 
 def tensor_data(ticker=None, db_path=None, verbose=False):
@@ -173,4 +197,4 @@ if __name__ == '__main__':
     #correlation_analysis(verbose=True, Plot=False)
 
     (df, X, y) = load_pure_data(ticker, db_path, verbose=True)
-    gen_data_set(df=df, time_steps=5, for_periods=2)
+    train, test = gen_data_set(df=df, window_size=6, how_many=1)
