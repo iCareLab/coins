@@ -9,9 +9,11 @@ from torch.autograd import Variable
 sys.path.append(os.path.dirname(os.path.abspath(os.path.dirname(__file__))))
 from ex_upbit import api_exchange as upbit
 
-def load_pure_data(ticker, db_path, verbose=False):
+def load_pure_data(ticker, db_path, split=0.8, verbose=False):
     """
     Getting Pure Data
+    Input : .cvs data format, OHLCV
+    Output: X data & Y data
     """
     if (ticker is None) or (db_path is None):
         print('Cannot Open db file')
@@ -21,56 +23,56 @@ def load_pure_data(ticker, db_path, verbose=False):
     #print(df)
 
     # df : 'open', 'high', 'low', 'close', 'volume', 'value'
-    #X = df.drop(columns='volume')   # 'open', 'high', 'low', 'close', 'value'
-    X = df.drop(columns='value')   # 'open', 'high', 'low', 'close', 'volume'
-    y = df[['close']]               # 'close'
-    if verbose is True: print('----- X:\n', X)
-    if verbose is True: print('----- y:\n', y)
+    full_data = df.drop(columns='value')   # 'open', 'high', 'low', 'close', 'volume'
+    if verbose is True: print('Original data:\n', full_data)
 
-    return (df, X, y)
+    ''' Split Data Set to train data and test data '''
+    SPLIT = int(len(df.index) * split)
+    split_train = full_data[:SPLIT].iloc[:, :]
+    split_test  = full_data[SPLIT:].iloc[:, :]
+    if verbose is True: print('train set:', np.array(split_train.shape))
+    if verbose is True: print('test set: ', np.array(split_test.shape))
 
-def gen_data_set(df=None, window_size=None, how_many=None):
-    """
-    input:
-        df     : 날짜를 인덱스로 가지는 코인가격 원시데이터. (pandas form)
-        steps  : input 데이터의 time steps
-        periods: output 데이터의 time steps
-    output:
-        X_train: 학습 데이타
-        y_train: 학습 결과 정답 데이타
-        X_test : 테스트에 사용될 데이타
-    """
-    SPLIT = int(len(df.index) * 0.8)
-    # training & test data set
-    ts_train = df[:SPLIT].iloc[:, :].values
-    ts_test  = df[SPLIT:].iloc[:, :].values
-    ts_train_len = len(ts_train)
-    ts_test_len  = len(ts_test)
+    return (df, split_train, split_test)
 
-    # Training 테이터의 samples와 time steps로 원본데이터 스라이싱하기...
-    X_train = []
-    y_train = []
-    #X_train = np.vsplit(X_train, 6)
-    for i in range(window_size, ts_train_len -1):
-        X_train.append(ts_train[i-window_size:i, :4])
-        y_train.append(ts_train[i:i+1, 3])
+def make_data_set(data, window_size=None, verbose=False):
+    ''' Scaled Normalize '''
+    if verbose is True: print('Train Data Set:')
+    #X_scaled = (data.values)
+    #Y_scaled = (data[['close']].values)    # 'close' column
+    X_scaled = StandardScaler().fit_transform(data)
+    Y_scaled = MinMaxScaler().fit_transform(data[['close']])    # 'close' column
+    if verbose is True: print('Scaled X:\n', X_scaled[:5])
+    if verbose is True: print('Scaled y:\n', Y_scaled[:5])
 
-    X_train = np.array(X_train)
-    y_train = np.array(y_train)
-    print(X_train.shape, y_train.shape)
+    ''' Make split by windows size '''
+    X_data = []
+    Y_data = []
+    for i in range(window_size, len(X_scaled)-1):
+        X_data.append(X_scaled[i-window_size:i, :])
+        Y_data.append(Y_scaled[i:i+1])
 
-    # Test 테이터의 samples와 time steps로 원본데이터 스라이싱하기...
-    X_test = []
-    y_test = []
-    for i in range(window_size, ts_test_len -1):
-        X_test.append(ts_test[i-window_size:i, :4])
-        y_test.append(ts_test[i:i+1, 3])
+    X_data = np.array(X_data)
+    Y_data = np.array(Y_data)
+    if verbose is True: print('X-data set:\n', X_data[:5], X_data.shape)
+    if verbose is True: print('Y-data set:\n', Y_data[:5], Y_data.shape)
 
-    X_test = np.array(X_test)
-    y_test = np.array(y_test)
-    print(X_test.shape, y_test.shape)
-        
-    return [X_train, y_train],[X_test, y_test]
+    return [X_data, Y_data]
+
+def data2Tensor(data=None, scaler=None, verbose=False):
+    ''' Normalize of Data '''
+    if   scaler == 'standard': 
+        print("Standard Scaling....")
+        scaler = StandardScaler()
+    elif scaler == 'min-max':
+        print("Min-Max Scaling....")
+        scaler = MinMaxScaler()
+    else:
+        print("scaler is one of 'standard' or 'min-max'")
+        return 0
+    
+    scaled_data = scaler.fit_transform(data[1])
+    if verbose is True: print('Scaled Data:\n', scaled_data[:5], '\n.....\n', scaled_data[-6:-1])
 
 
 def tensor_data(ticker=None, db_path=None, verbose=False):
@@ -189,12 +191,15 @@ def correlation_analysis(verbose=False, Plot=False):
     plt.show()
 
 if __name__ == '__main__':
-    db_path = "../data/upbit/2022-07-12 17:00:00/"
+    db_path = "/root/work/coins/data/upbit/2022-07-12 17:00:00/"
     #ticker = 'KRW-WAXP'
     ticker = 'KRW-ELF'
 
     #X_train, y_train, X_test, y_test = tensor_data(ticker, db_path, verbose=False)
     #correlation_analysis(verbose=True, Plot=False)
+    #train, test = gen_data_set(df=df, window_size=6, verbose=False)
 
-    (df, X, y) = load_pure_data(ticker, db_path, verbose=True)
-    train, test = gen_data_set(df=df, window_size=6, how_many=1)
+    (df, train, test) = load_pure_data(ticker, db_path, split=0.8, verbose=True)
+    (train_X, train_Y) = make_data_set(train, window_size=6, verbose=True)
+    (test_X, test_Y) = make_data_set(test, window_size=6, verbose=True)
+    #data2Tensor(data=test, scaler='min-max', verbose=True)
