@@ -9,7 +9,7 @@ from torch.autograd import Variable
 sys.path.append(os.path.dirname(os.path.abspath(os.path.dirname(__file__))))
 from ex_upbit import api_exchange as upbit
 
-def load_pure_data(ticker, db_path, split=0.8, verbose=False):
+def load_pure_data(ticker, db_path, split=0.8, verbose=False, plot=False):
     """
     Getting Pure Data
     Input : .cvs data format, OHLCV
@@ -23,34 +23,39 @@ def load_pure_data(ticker, db_path, split=0.8, verbose=False):
     #print(df)
 
     # df : 'open', 'high', 'low', 'close', 'volume', 'value'
-    full_data = df.drop(columns='value')   # 'open', 'high', 'low', 'close', 'volume'
-    if verbose is True: print('Original data:\n', full_data)
+    df = df.drop(columns='value')   # 'open', 'high', 'low', 'close', 'volume'
+    df = df.drop(columns='volume')   # 'open', 'high', 'low', 'close', 'volume'
+    if verbose is True: print('Original data:\n', df)
 
     ''' Split Data Set to train data and test data '''
     SPLIT = int(len(df.index) * split)
-    split_train = full_data[:SPLIT].iloc[:, :]
-    split_test  = full_data[SPLIT:].iloc[:, :]
+    split_train = df.iloc[:SPLIT]
+    split_test  = df.iloc[SPLIT:]
     if verbose is True: print('train set:', np.array(split_train.shape))
     if verbose is True: print('test set: ', np.array(split_test.shape))
+
+    if plot is True:
+        #plt.plot(df['close'])
+        plt.plot(split_train['close'])
+        plt.plot(split_test['close'])
+        plt.show()
 
     return (df, split_train, split_test)
 
 def make_data_set(data, window_size=None, verbose=False):
     ''' Scaled Normalize '''
     if verbose is True: print('Train Data Set:')
-    #X_scaled = (data.values)
-    #Y_scaled = (data[['close']].values)    # 'close' column
     X_scaled = StandardScaler().fit_transform(data)
     Y_scaled = MinMaxScaler().fit_transform(data[['close']])    # 'close' column
-    if verbose is True: print('Scaled X:\n', X_scaled[:5])
-    if verbose is True: print('Scaled y:\n', Y_scaled[:5])
+    if verbose is True: print('Scaled X:\n', X_scaled[:5], X_scaled.shape)
+    if verbose is True: print('Scaled Y:\n', Y_scaled[:5], Y_scaled.shape)
 
     ''' Make split by windows size '''
     X_data = []
-    Y_data = []
     for i in range(window_size, len(X_scaled)-1):
         X_data.append(X_scaled[i-window_size:i, :])
-        Y_data.append(Y_scaled[i:i+1])
+
+    Y_data = Y_scaled[window_size:-1]
 
     X_data = np.array(X_data)
     Y_data = np.array(Y_data)
@@ -59,73 +64,14 @@ def make_data_set(data, window_size=None, verbose=False):
 
     return [X_data, Y_data]
 
-def data2Tensor(data=None, scaler=None, verbose=False):
-    ''' Normalize of Data '''
-    if   scaler == 'standard': 
-        print("Standard Scaling....")
-        scaler = StandardScaler()
-    elif scaler == 'min-max':
-        print("Min-Max Scaling....")
-        scaler = MinMaxScaler()
-    else:
-        print("scaler is one of 'standard' or 'min-max'")
-        return 0
-    
-    scaled_data = scaler.fit_transform(data[1])
-    if verbose is True: print('Scaled Data:\n', scaled_data[:5], '\n.....\n', scaled_data[-6:-1])
+def np_array2Tensor(X=None, Y=None, verbose=False):
+    tensor_X = Variable(torch.Tensor(X))
+    tensor_Y = Variable(torch.Tensor(Y))
+    if verbose is True: print("tensor data set:", tensor_X.shape, tensor_Y.shape)
+
+    return tensor_X, tensor_Y
 
 
-def tensor_data(ticker=None, db_path=None, verbose=False):
-    (_df, X, y) = load_pure_data(ticker, db_path, verbose = True)
-
-    """
-    Normalize of getted data
-    """
-    ss = StandardScaler()
-    mm = MinMaxScaler()
-
-    X_ss = ss.fit_transform(X)
-    y_mm = mm.fit_transform(y)
-    if verbose is True: print('----- X:\n', X_ss[:5], '\n----- y:\n', y_mm[:5])
-
-    """
-    Split Data to training & test data
-    """
-    SPLIT = int(len(X.index) * 0.8)
-    X_train_matrix = X_ss[:SPLIT, :]; y_train_matrix = y_mm[:SPLIT, :]
-    X_test_matrix  = X_ss[SPLIT:, :]; y_test_matrix  = y_mm[SPLIT:, :]
-    if verbose is True: print('----- Training Matrix(2dim): X - ', X_train_matrix.shape, ', y -', y_train_matrix.shape)
-    if verbose is True: print('----- Train Data Set: \n', X_train_matrix[:5], y_train_matrix[:5])
-
-    """
-    Transfer to tensor data format
-        scalar = 0-dimention = 0-tensor         :                       : (1 2 3 4 5 6)
-        vector = 1-dimention = array = 1-tensor : shape(x, )            : [1 2 3 4 5 6]
-        matrix = 2-dimention = 2-tensor         : shape(x, y)           : [[1 2 3][4 5 6]]
-        tensor = N-dimention = N-tensor         : shape(x, y, z, .... ) : [[[1 2][3 4][5 6]]]
-    """
-    X_train_tensor_variable = Variable(torch.Tensor(X_train_matrix))
-    y_train_tensor_variable = Variable(torch.Tensor(y_train_matrix))
-    X_test_tensor_variable = Variable(torch.Tensor(X_test_matrix))
-    y_test_tensor_variable = Variable(torch.Tensor(y_test_matrix))
-    if verbose is True: print('----- Training Tensor(2dim): X -', X_train_tensor_variable.shape, ', y -', y_train_tensor_variable.shape)
-    if verbose is True: print('----- Train Tensor Variable sets: \n', X_train_tensor_variable[:5], '\n', y_train_tensor_variable[:5])
-    if verbose is True: print('----- Testing Tensor(2dim): y -', X_test_tensor_variable.shape, ', y -', y_test_tensor_variable.shape)
-    if verbose is True: print('----- Test Tensor Variable sets: \n', X_test_tensor_variable[:5], '\n', y_test_tensor_variable[:5])
-
-    """
-    torch Variable : data, grad, grad_fn
-    """
-    X_train_tensor = torch.reshape(X_train_tensor_variable, (X_train_tensor_variable.shape[0], 1, X_train_tensor_variable.shape[1]))
-    y_train_tensor = y_train_tensor_variable
-    X_test_tensor  = torch.reshape(X_test_tensor_variable,  (X_test_tensor_variable.shape[0],  1, X_test_tensor_variable.shape[1] )) 
-    y_test_tensor  = y_test_tensor_variable
-    if verbose is True: print('----- Training Reshape-X Tensor(3dim): X -', X_train_tensor.shape, ', y -', y_train_tensor.shape)
-    if verbose is True: print('----- Train Reshape-X Tensors sets: \n', X_train_tensor[:5], '\n', y_train_tensor[:5])
-    if verbose is True: print('----- Testing Reshape-X Tensor(3dim): X -', X_test_tensor.shape, ', y -', y_test_tensor.shape)
-    if verbose is True: print('----- Test Reshape-X Tensors sets: \n', X_test_tensor[:5], '\n', y_test_tensor[:5])
-
-    return (X_train_tensor, y_train_tensor, X_test_tensor, y_test_tensor)
 
 ## 변수의 상관 관계 분석
 import matplotlib.pyplot as plt
@@ -190,16 +136,28 @@ def correlation_analysis(verbose=False, Plot=False):
     plt.plot(df.close)
     plt.show()
 
+def tensor_data(ticker=None, db_path=None, verbose=False):
+    (df, train, test) = load_pure_data(ticker, db_path, split=0.8, verbose=False)
+    (train_X, train_Y) = make_data_set(train, window_size=6, verbose=False)
+    (test_X, test_Y) = make_data_set(test, window_size=6, verbose=False)
+    if verbose is True: print('train data set:', train_X.shape, train_Y.shape)
+    if verbose is True: print('test data set :', test_X.shape, test_Y.shape)
+    (train_X, train_Y) = np_array2Tensor(train_X, train_Y, verbose=verbose)
+    (test_X, test_Y)   = np_array2Tensor(test_X, test_Y, verbose=verbose)
+
+    return train_X, train_Y, test_X, test_Y
+
 if __name__ == '__main__':
     db_path = "/root/work/coins/data/upbit/2022-07-12 17:00:00/"
     #ticker = 'KRW-WAXP'
-    ticker = 'KRW-ELF'
-
-    #X_train, y_train, X_test, y_test = tensor_data(ticker, db_path, verbose=False)
-    #correlation_analysis(verbose=True, Plot=False)
-    #train, test = gen_data_set(df=df, window_size=6, verbose=False)
+    ticker = 'KRW-ETH'
 
     (df, train, test) = load_pure_data(ticker, db_path, split=0.8, verbose=True)
     (train_X, train_Y) = make_data_set(train, window_size=6, verbose=True)
-    (test_X, test_Y) = make_data_set(test, window_size=6, verbose=True)
-    #data2Tensor(data=test, scaler='min-max', verbose=True)
+    (test_X, test_Y) = make_data_set(test, window_size=6, verbose=False)
+    print('train data set:', train_X.shape, train_Y.shape)
+    print('test data set :', test_X.shape, test_Y.shape)
+    (train_X, train_Y) = np_array2Tensor(train_X, train_Y, verbose=True)
+    (test_X, test_Y)   = np_array2Tensor(test_X, test_Y, verbose=True)
+
+    #correlation_analysis(verbose=True, Plot=False)

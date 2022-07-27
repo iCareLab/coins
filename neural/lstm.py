@@ -29,13 +29,13 @@ class LSTM(nn.Module):
         self.relu = nn.ReLU() 
 
     def forward(self,x):
-        #self.hidden = (torch.zeros(self.layers, self.seq_len, self.hidden_dim), \
-        #               torch.zeros(self.layers, self.seq_len, self.hidden_dim))
+        self.hidden = (torch.zeros(self.num_layers, self.seq_length, self.hidden_size), \
+                       torch.zeros(self.num_layers, self.seq_length, self.hidden_size))
 
-        #h_0 = Variable(torch.zeros(self.num_layers, x.size(0), self.hidden_size)).to(self.device) #hidden state
-        #c_0 = Variable(torch.zeros(self.num_layers, x.size(0), self.hidden_size)).to(self.device) #internal state   
-        h_0 = torch.zeros(self.num_layers, x.size(0), self.hidden_size).to(self.device) #hidden state
-        c_0 = torch.zeros(self.num_layers, x.size(0), self.hidden_size).to(self.device) #internal state   
+        h_0 = Variable(torch.zeros(self.num_layers, x.size(0), self.hidden_size)).to(self.device) #hidden state
+        c_0 = Variable(torch.zeros(self.num_layers, x.size(0), self.hidden_size)).to(self.device) #internal state   
+        #h_0 = torch.zeros(self.num_layers, x.size(0), self.hidden_size).to(self.device) #hidden state
+        #c_0 = torch.zeros(self.num_layers, x.size(0), self.hidden_size).to(self.device) #internal state   
 
         # Propagate input through LSTM
         output, (hn, cn) = self.lstm(x, (h_0, c_0)) #lstm with input, hidden, and internal state
