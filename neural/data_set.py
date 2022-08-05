@@ -24,7 +24,10 @@ def load_pure_data(ticker, db_path, split=0.8, verbose=False, plot=False):
 
     # df : 'open', 'high', 'low', 'close', 'volume', 'value'
     df = df.drop(columns='value')   # 'open', 'high', 'low', 'close', 'volume'
-    df = df.drop(columns='volume')   # 'open', 'high', 'low', 'close', 'volume'
+    #df = df.drop(columns='volume')   # 'open', 'high', 'low', 'close', 'volume'
+    #df = df.drop(columns='open')   # 'open', 'high', 'low', 'close', 'volume'
+    #df = df.drop(columns='high')   # 'open', 'high', 'low', 'close', 'volume'
+    #df = df.drop(columns='low')   # 'open', 'high', 'low', 'close', 'volume'
     if verbose is True: print('Original data:\n', df)
 
     ''' Split Data Set to train data and test data '''

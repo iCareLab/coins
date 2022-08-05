@@ -22,6 +22,7 @@ def network_parameter(device, X_train_tensors):
     _length = X_train_tensors.shape[1]
 
     lstm = network.LSTM(num_classes, input_size, hidden_size, num_layers, _length, device)
+    print(lstm.summary())
     loss_function = torch.nn.MSELoss()    # mean-squared error for regression
     optimizer = torch.optim.Adam(lstm.parameters(), lr=learning_rate)  # adam optimizer
 
@@ -60,7 +61,7 @@ if __name__ == '__main__':
 
     """ 학습하기 """
     training(lstm, X_train, y_train, device)
-
+    
     # 모델의 state_dict 출력
     print("Model's state_dict:")
     for param_tensor in lstm.state_dict():
