@@ -49,7 +49,8 @@ def make_data_set(data, window_size=None, verbose=False):
     ''' Scaled Normalize '''
     if verbose is True: print('Train Data Set:')
     X_scaled = StandardScaler().fit_transform(data)
-    Y_scaled = MinMaxScaler().fit_transform(data[['close']])    # 'close' column
+    scaler = MinMaxScaler(feature_range=(0,1))
+    Y_scaled = scaler.fit_transform(data[['close']])
     if verbose is True: print('Scaled X:\n', X_scaled[:5], X_scaled.shape)
     if verbose is True: print('Scaled Y:\n', Y_scaled[:5], Y_scaled.shape)
 

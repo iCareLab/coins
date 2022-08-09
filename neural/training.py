@@ -22,7 +22,7 @@ def network_parameter(device, X_train_tensors):
     _length = X_train_tensors.shape[1]
 
     lstm = network.LSTM(num_classes, input_size, hidden_size, num_layers, _length, device)
-    print(lstm.summary())
+    #print(lstm.summary())
     loss_function = torch.nn.MSELoss()    # mean-squared error for regression
     optimizer = torch.optim.Adam(lstm.parameters(), lr=learning_rate)  # adam optimizer
 

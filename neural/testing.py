@@ -1,6 +1,7 @@
 import os, sys
 import datetime as dt
-from turtle import color
+import pandas as pd
+import numpy as np
 import matplotlib.pyplot as plt
 import torch
 from torch.autograd import Variable 
@@ -24,31 +25,47 @@ def load_model(PATH):
 
 def estimate(model, device, ticker, db_path):
     """ 데이터 가져오기 """
+    (df, train, test) = get.load_pure_data(ticker, db_path, split=0.8, verbose=False)
     X_train, y_train, X_test, y_test = get.tensor_data(ticker, db_path, verbose=False)
+    data = pd.concat([train, test])
+    data['predict'] = np.NaN
+    print(data)
 
     """ 예측하기 """
     predict = model(X_test.to(device))#forward pass
     predict = predict.data.detach().cpu().numpy() #numpy conversion
+
+
     actual  = y_test.data.numpy()
 
-    X = torch.cat([X_test,X_train], dim = 0)
-    Y = torch.cat([y_train,y_test], dim = 0)
-    Y = Y.data.numpy()
+    scaler = MinMaxScaler(feature_range=(0,1))
+    scaler.fit_transform(test[['close']])
+    predict = scaler.inverse_transform(predict)
+    i = 0
+    for predicted in np.array(predict[::-1]):
+        i += 1
+        print(i, predicted, data.close.iloc[len(data.index)-i])
+        data.predict.iloc[len(data.index)-i] = predicted
 
-    plt.plot(y_train.data.numpy())
-    plt.plot(actual)
-    plt.show()
+    print(data)
 
-    return actual, predict, X, Y
+    #plt.plot(data['close'])
+    #plt.plot(data['predict'])
+
+    #plt.axvline(x=train.index[-1], c='r', linestyle='--') #size of the training set
+    #plt.plot(data['close'])
+    #plt.show()
+
+    return data, train.index[-1]
 
 #def result_plot(dataY_plot, data_predict, trains):
-def result_plot(actual, predict, X, Y):
+def result_plot(pd_result, train_amount):
     """ plot 하기 """
     plt.figure(figsize=(10,6)) #plotting
-    #plt.axvline(x=trains, c='r', linestyle='--') #size of the training set
-
-    plt.stem(actual,  label='Actual Data') #actual plot
-    plt.plot(predict, label='Predicted Data') #predicted plot
+    plt.axvline(x=train_amount, c='r', linestyle='--') #size of the training set
+    #plt.stem(pd_result['close'],  label='Actual Data') #actual plot
+    plt.plot(pd_result['close'],  label='Actual Data') #actual plot
+    plt.plot(pd_result['predict'], label='Predicted Data') #predicted plot
     plt.title('Time-Series Prediction')
     plt.legend()
     plt.grid(axis='x')
@@ -70,8 +87,9 @@ if __name__ == '__main__':
     # 모델을 이용하여 test 구간의 data를 얻는다.
     ticker  = 'KRW-ETH'
     db_path = '/root/work/coins/data/upbit/2022-07-12 17:00:00/'
+
     device = network.get_machine()
-    actual, predict, X, Y = estimate(model, device, ticker, db_path)
+    pd_result, trains = estimate(model, device, ticker, db_path)
 
     # 그래프로 확인한다.
-    result_plot(actual, predict, X, Y)
+    result_plot(pd_result, trains)
