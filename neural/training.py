@@ -50,8 +50,9 @@ def training(lstm, X_tensors, y_tensors, device):
 
 if __name__ == '__main__':
     """ 데이터셋 준비하기 """
-    ticker  = 'KRW-ETH'
-    db_path = '/root/work/coins/data/upbit/2022-07-12 17:00:00/'
+    ticker  = 'KRW-BTC'
+    #db_path = '/root/work/coins/data/upbit/2022-07-12 17:00:00/'
+    db_path = '/root/work/coins/data/upbit/2022-08-10/'
 
     X_train, y_train, X_test, y_test = get.tensor_data(ticker, db_path, True)
 

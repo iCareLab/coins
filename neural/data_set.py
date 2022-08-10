@@ -1,6 +1,10 @@
 import os, sys
 import pandas as pd
 import numpy as np
+import glob
+import shutil
+import time
+import datetime as dt
 from sklearn.preprocessing import StandardScaler, MinMaxScaler
 
 import torch
@@ -8,6 +12,43 @@ from torch.autograd import Variable
 
 sys.path.append(os.path.dirname(os.path.abspath(os.path.dirname(__file__))))
 from ex_upbit import api_exchange as upbit
+from msglog import progress as bar
+
+def db_download(db_dir=None, except_tickers=None):
+    # 원화거래 가능 종목 조회
+    # fiat를 'KRW'로 지정해서 원화 거래 가능한 비트코인명만 수집
+    # 업비트 원화 거래 가능한 티커명 조회
+    tickers = upbit.get_tickers(fiat='KRW')
+    if except_tickers is None:
+        ticker_names = tickers
+    else:
+        ticker_names = [x for x in tickers if x not in except_tickers]
+    print("download: " + str(len(ticker_names)) + "tickers")
+
+	# 현재 시간 data base directory가 없으면 새로 생성 
+    if not os.path.exists(db_dir):
+        os.makedirs(db_dir)
+
+	# 어제 download한 database는 모두 삭제한다.
+    yesterday = dt.date.today() - dt.timedelta(days=1)
+    rm_dir = db_dir[:len(db_dir)-19] + str(yesterday) + "*"
+    rm_dirs = glob.glob(rm_dir)
+    for rm_dir in rm_dirs:
+        shutil.rmtree(rm_dir)
+
+	# 현재 시간 기준 일봉 데이터 다운로드
+    idx = 0
+    bar.progress(0, len(ticker_names))
+    for ticker in ticker_names:
+        data_file = db_dir + '/' + ticker + '.csv'
+        if os.path.exists(data_file) is True:
+            pass
+        else:
+            df = upbit.get_ohlcv(ticker, interval='minutes60')
+            df.to_csv(data_file, encoding='cp949')
+            time.sleep(0.5)
+            bar.progress(idx+1, len(ticker_names))
+            idx += 1
 
 def load_pure_data(ticker, db_path, split=0.8, verbose=False, plot=False):
     """
@@ -156,6 +197,9 @@ if __name__ == '__main__':
     #ticker = 'KRW-WAXP'
     ticker = 'KRW-ETH'
 
+    db_download(db_dir='/root/work/coins/data/upbit/'+str(dt.date.today()), except_tickers=None)
+
+    '''
     (df, train, test) = load_pure_data(ticker, db_path, split=0.8, verbose=True)
     (train_X, train_Y) = make_data_set(train, window_size=6, verbose=True)
     (test_X, test_Y) = make_data_set(test, window_size=6, verbose=False)
@@ -163,5 +207,6 @@ if __name__ == '__main__':
     print('test data set :', test_X.shape, test_Y.shape)
     (train_X, train_Y) = np_array2Tensor(train_X, train_Y, verbose=True)
     (test_X, test_Y)   = np_array2Tensor(test_X, test_Y, verbose=True)
+    '''
 
     #correlation_analysis(verbose=True, Plot=False)

@@ -32,40 +32,33 @@ def estimate(model, device, ticker, db_path):
     print(data)
 
     """ 예측하기 """
+    #X= torch.concat([X_train, X_test])
+    #predict = model(X.to(device))#forward pass
     predict = model(X_test.to(device))#forward pass
     predict = predict.data.detach().cpu().numpy() #numpy conversion
 
-
-    actual  = y_test.data.numpy()
-
+    """ 정상 가격으로 환원 """
     scaler = MinMaxScaler(feature_range=(0,1))
     scaler.fit_transform(test[['close']])
     predict = scaler.inverse_transform(predict)
     i = 0
     for predicted in np.array(predict[::-1]):
         i += 1
-        print(i, predicted, data.close.iloc[len(data.index)-i])
+        #print(i, predicted, data.close.iloc[len(data.index)-i])
         data.predict.iloc[len(data.index)-i] = predicted
 
     print(data)
 
-    #plt.plot(data['close'])
-    #plt.plot(data['predict'])
-
-    #plt.axvline(x=train.index[-1], c='r', linestyle='--') #size of the training set
-    #plt.plot(data['close'])
-    #plt.show()
-
     return data, train.index[-1]
 
 #def result_plot(dataY_plot, data_predict, trains):
-def result_plot(pd_result, train_amount):
+def result_plot(result, train_amount):
     """ plot 하기 """
-    plt.figure(figsize=(10,6)) #plotting
+    #plt.figure(figsize=(10,6)) #plotting
     plt.axvline(x=train_amount, c='r', linestyle='--') #size of the training set
     #plt.stem(pd_result['close'],  label='Actual Data') #actual plot
-    plt.plot(pd_result['close'],  label='Actual Data') #actual plot
-    plt.plot(pd_result['predict'], label='Predicted Data') #predicted plot
+    plt.plot(result['close'],  label='Actual Data') #actual plot
+    plt.plot(result['predict'], label='Predicted Data') #predicted plot
     plt.title('Time-Series Prediction')
     plt.legend()
     plt.grid(axis='x')
@@ -85,8 +78,8 @@ if __name__ == '__main__':
         print(param_tensor, "\t", model.state_dict()[param_tensor].size())
 
     # 모델을 이용하여 test 구간의 data를 얻는다.
-    ticker  = 'KRW-ETH'
-    db_path = '/root/work/coins/data/upbit/2022-07-12 17:00:00/'
+    ticker  = 'KRW-BTC'
+    db_path = '/root/work/coins/data/upbit/2022-08-10/'
 
     device = network.get_machine()
     pd_result, trains = estimate(model, device, ticker, db_path)
