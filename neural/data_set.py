@@ -197,7 +197,8 @@ if __name__ == '__main__':
     #ticker = 'KRW-WAXP'
     ticker = 'KRW-ETH'
 
-    db_download(db_dir='/root/work/coins/data/upbit/'+str(dt.date.today()), except_tickers=None)
+    #db_download(db_dir='/root/work/coins/data/upbit/'+str(dt.date.today()), except_tickers=None)
+    db_download(db_dir='/workspaces/coins/data/upbit/'+str(dt.date.today()), except_tickers=None)
 
     '''
     (df, train, test) = load_pure_data(ticker, db_path, split=0.8, verbose=True)

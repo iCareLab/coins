@@ -67,7 +67,8 @@ def result_plot(result, train_amount):
 
 if __name__ == '__main__':
     CURR_DIR = os.getcwd()
-    os.chdir('/root/work/coins/neural/models')
+    #os.chdir('/root/work/coins/neural/models')
+    os.chdir('/workspaces/coins/neural/models')
     PATH = str(dt.date.today()) + '-'
     model = load_model(PATH)
     os.chdir(CURR_DIR)
@@ -79,7 +80,8 @@ if __name__ == '__main__':
 
     # 모델을 이용하여 test 구간의 data를 얻는다.
     ticker  = 'KRW-BTC'
-    db_path = '/root/work/coins/data/upbit/2022-08-10/'
+    #db_path = '/root/work/coins/data/upbit/2022-08-10/'
+    db_path = '/workspaces/coins/data/upbit/2022-08-25/'
 
     device = network.get_machine()
     pd_result, trains = estimate(model, device, ticker, db_path)
