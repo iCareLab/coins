@@ -193,12 +193,13 @@ def tensor_data(ticker=None, db_path=None, verbose=False):
     return train_X, train_Y, test_X, test_Y
 
 if __name__ == '__main__':
-    db_path = "/root/work/coins/data/upbit/2022-07-12 17:00:00/"
+    CURR_DIR = os.getcwd()
+    TODAY = dt.date.today()
+    db_path = CURR_DIR + "/data/upbit/" + str(TODAY)
     #ticker = 'KRW-WAXP'
     ticker = 'KRW-ETH'
 
-    #db_download(db_dir='/root/work/coins/data/upbit/'+str(dt.date.today()), except_tickers=None)
-    db_download(db_dir='/workspaces/coins/data/upbit/'+str(dt.date.today()), except_tickers=None)
+    db_download(db_dir=db_path, except_tickers=None)
 
     '''
     (df, train, test) = load_pure_data(ticker, db_path, split=0.8, verbose=True)
