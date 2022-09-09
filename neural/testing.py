@@ -68,10 +68,10 @@ def result_plot(result, train_amount):
 if __name__ == '__main__':
     CURR_DIR = os.getcwd()
     #os.chdir('/root/work/coins/neural/models')
-    os.chdir('/workspaces/coins/neural/models')
-    PATH = str(dt.date.today()) + '-'
-    model = load_model(PATH)
-    os.chdir(CURR_DIR)
+    #os.chdir('/workspaces/coins/neural/models')
+    #PATH = str(dt.date.today()) + '-'
+    MODEL_PATH = CURR_DIR + '/neural/models/' + str(dt.date.today()) + '-'
+    model = load_model(MODEL_PATH)
 
     # 모델의 state_dict 출력
     print("Model's state_dict:")
@@ -82,9 +82,11 @@ if __name__ == '__main__':
     ticker  = 'KRW-BTC'
     #db_path = '/root/work/coins/data/upbit/2022-08-10/'
     db_path = '/workspaces/coins/data/upbit/2022-08-25/'
+    DB_PATH = CURR_DIR + '/data/upbit/' + str(dt.date.today()) + '/'
 
     device = network.get_machine()
-    pd_result, trains = estimate(model, device, ticker, db_path)
+    #pd_result, trains = estimate(model, device, ticker, db_path)
+    pd_result, trains = estimate(model, device, ticker, DB_PATH)
 
     # 그래프로 확인한다.
     result_plot(pd_result, trains)

@@ -50,10 +50,13 @@ def training(lstm, X_tensors, y_tensors, device):
 
 if __name__ == '__main__':
     """ 데이터셋 준비하기 """
+    CURR_DIR = os.getcwd()
+    TODAY = dt.date.today()
+    db_path = CURR_DIR + "/data/upbit/" + str(TODAY) + '/'
     ticker  = 'KRW-BTC'
     #db_path = '/root/work/coins/data/upbit/2022-07-12 17:00:00/'
     #db_path = '/root/work/coins/data/upbit/2022-08-10/'
-    db_path = '/workspaces/coins/data/upbit/2022-08-25/'
+    #db_path = '/workspaces/coins/data/upbit/2022-08-25/'
 
     X_train, y_train, X_test, y_test = get.tensor_data(ticker, db_path, True)
 
@@ -79,10 +82,11 @@ if __name__ == '__main__':
     ## 전체 모델 저장하기
     CURR_DIR = os.getcwd()
     #os.chdir('/root/work/coins/neural/models')
-    os.chdir('/workspaces/coins/neural/models')
+    #os.chdir('/workspaces/coins/neural/models')
     PATH = str(dt.date.today()) + '-'
-    torch.save(lstm, PATH + 'model.pt')  # 전체 모델 저장
-    torch.save(lstm.state_dict(), PATH + 'model_state_dict.pt')  # 모델 객체의 state_dict 저장
+    SAVE_PATH = CURR_DIR + '/neural/models/' + PATH
+    torch.save(lstm, SAVE_PATH + 'model.pt')  # 전체 모델 저장
+    torch.save(lstm.state_dict(), SAVE_PATH + 'model_state_dict.pt')  # 모델 객체의 state_dict 저장
     torch.save({
         'model': lstm.state_dict(),
         'optimizer': optimizer.state_dict() },
